@@ -1,0 +1,8 @@
+# TTS working folders and model files (rendered clips that the games use are committed)
+**/tts/out_*/
+**/tts/kokoro.onnx
+**/tts/voices.bin
+**/tts/kokoro-onnx/
+**/tts/esp/
+__pycache__/
+.playwright-mcp/

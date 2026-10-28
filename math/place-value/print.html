@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Place Value Worksheet</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&display=swap">
+<link rel="stylesheet" href="../../shared/base.css">
+<style>
+/* Print sheets: A4 portrait, one page each (chart, worksheet, answer key). Always light colours on paper.
+   Questions are >= 16pt, with plenty of white space; one worksheet page = one ~10 minute session. */
+@page{size:A4 portrait;margin:12mm}
+:root{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.th{--c:#7a3db5;--cs:#f1e8fa} .hu{--c:#1f66b8;--cs:#e6f0fb} .te{--c:#2a7d3a;--cs:#e7f4e9} .un{--c:#c0501b;--cs:#fcece4}
+.controls{max-width:210mm;margin:0 auto 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
+.controls select,.controls input{font:inherit;font-size:1rem;padding:8px 10px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.controls input{width:7.5em}
+.sheet{width:210mm;min-height:297mm;margin:0 auto 20px;background:#fff;color:#173a3a;padding:12mm 14mm;box-shadow:0 2px 12px rgba(0,0,0,.15);
+  font-family:var(--body);font-size:16pt;display:flex;flex-direction:column;gap:5mm}
+@media screen and (max-width:820px){.sheet{width:100%;min-height:0;padding:16px;font-size:14pt}}
+@media print{body{background:#fff;padding:0}.controls,.screen-only{display:none!important}.sheet{box-shadow:none;margin:0;padding:0;width:auto;min-height:0;break-after:page}.sheet:last-child{break-after:auto}}
+.sheet h2{font-family:var(--display);font-weight:800;font-size:22pt;margin:0;line-height:1.1}
+.sheet h3{font-family:var(--display);font-weight:800;font-size:15pt;margin:0 0 2mm;color:#1f8a83}
+.meta{display:flex;justify-content:space-between;gap:8mm;font-size:13pt;color:#5b7a78}
+.meta span{flex:1;border-bottom:1.5px solid #9bb;padding-bottom:1mm}
+.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+/* Houses table */
+table.pv{border-collapse:separate;border-spacing:2mm 0;width:100%;direction:ltr;table-layout:fixed}
+table.pv th{background:var(--c);color:#fff;font-family:var(--display);font-weight:800;font-size:14pt;padding:6mm 1mm 2mm;
+  clip-path:polygon(50% 0,100% 38%,100% 100%,0 100%,0 38%)}
+table.pv td{border:2px solid var(--c);border-top:none;background:var(--cs);height:13mm;text-align:center;font-weight:700;font-size:20pt;color:var(--c)}
+table.pv td.v{font-size:14pt;height:9mm}
+table.pv.mini th{font-size:9pt;padding:4.5mm 0 1.5mm;letter-spacing:-.01em} table.pv.mini td{height:11mm}
+.times{display:flex;direction:ltr;justify-content:space-around;font-family:var(--display);font-weight:800;color:#5b7a78;font-size:12pt;margin-top:-2mm}
+.qs{display:grid;grid-template-columns:1fr 1fr;gap:3mm 10mm}
+.qs.one{grid-template-columns:1fr}
+.q{line-height:1.7}
+.q .n{font-weight:700}
+.q u{text-decoration-thickness:3px;text-underline-offset:4px}
+.blank{display:inline-block;min-width:26mm;border-bottom:1.5px solid #577;margin-inline:1mm}
+.blank.s{min-width:16mm}
+.ans{color:#c0501b;font-weight:700}
+.foot{margin-top:auto;font-size:10pt;color:#8aa;display:flex;justify-content:space-between}
+.intro{font-size:13pt;line-height:1.5;margin:0;color:#355}
+</style>
+
+<div class="controls screen-only">
+  <a class="home" href="../../" id="home">⌂</a>
+  <a class="home" id="back" href="index.html">←</a>
+  <select id="lang"><option value="en">English</option><option value="he">עברית</option></select>
+  <select id="level"></select>
+  <label><span id="seedL">Sheet</span> # <input id="seed" inputmode="numeric"></label>
+  <button class="btn ghost small" id="new">🎲</button>
+  <button class="btn small" id="print">🖨️</button>
+</div>
+<div id="out"></div>
+
+<script src="../../shared/core.js"></script>
+<script src="pv.js"></script>
+<script>
+const P = {
+  en: { chart: 'Place Value Houses', chartIntro: 'Every digit lives in a house. Each house is worth 10 times the house to its right.',
+        example: 'Example', worksheet: 'Place Value Practice', key: 'Answer Key', name: 'Name', date: 'Date',
+        A: 'What is the underlined digit worth?', B: 'Write it in expanded form', Br: 'Write the number',
+        C: 'Put the number in the houses', D: 'Make the biggest and the smallest number', big: 'Biggest', small: 'Smallest',
+        sheet: 'Sheet', print: '🖨️ Print', back: '← Back to the games', level: 'Level' },
+  he: { chart: 'בתים של ערך המקום', chartIntro: 'כל ספרה גרה בבית. כל בית שווה פי 10 מהבית שמימינו.',
+        example: 'דוגמה', worksheet: 'תרגול ערך המקום', key: 'פתרונות', name: 'שם', date: 'תאריך',
+        A: 'כמה שווה הספרה שמתחתיה קו?', B: 'כתבו בפירוק לפי ערך המקום', Br: 'כתבו את המספר',
+        C: 'כתבו את המספר בבתים', D: 'בנו את המספר הגדול ביותר ואת הקטן ביותר', big: 'הגדול ביותר', small: 'הקטן ביותר',
+        sheet: 'דף', print: '🖨️ הדפסה', back: 'חזרה למשחקים →', level: 'רמה' },
+};
+const q = new URLSearchParams(location.search);
+let lang = pickLang(), level = Math.min(4, Math.max(1, +(q.get('level') || store.get('pv-level', 1)) || 1));
+let seed = +(q.get('seed')) || randInt(1000, 99999);
+
+function pvTable(w, rows, opt = {}) {
+  const ps = housesFor(w), S = STR[lang];
+  return `<table class="pv ${opt.mini ? 'mini' : ''}"><tr>${ps.map(p => `<th class="${p}">${S.place[p]}</th>`).join('')}</tr>
+    ${rows.map(r => `<tr>${ps.map((p, i) => `<td class="${p} ${r.v ? 'v' : ''}">${r.cells[i] ?? ''}</td>`).join('')}</tr>`).join('')}</table>`;
+}
+const N = n => `<span class="ltr n">${fmt(n)}</span>`;
+const expandedTxt = (n, w) => { const d = digitsOf(n, w); return housesFor(w).map((p, i) => d[i] ? fmt(d[i] * PLACE_VAL[p]) : null).filter(Boolean).join(' + '); };
+/* underline digit k of n (digit index, commas skipped) */
+const underline = (n, k) => { let pos = -1; return '<span class="ltr n">' + fmt(n).split('').map(c => c === ',' ? c : (++pos === k ? `<u>${c}</u>` : c)).join('') + '</span>'; };
+
+function makeSheet() {
+  const rnd = seeded(seed), w = LEVELS[level - 1].digits, num = () => makeNumber(level, rnd);
+  const A = Array.from({ length: 4 }, () => { const n = num(), d = digitsOf(n, w), ks = d.map((x, i) => x ? i : -1).filter(i => i >= 0), k = ks[Math.floor(rnd() * ks.length)];
+    return { n, k, a: d[k] * PLACE_VAL[housesFor(w)[k]] }; });
+  const B = Array.from({ length: 2 }, num), Br = Array.from({ length: 2 }, num), C = Array.from({ length: 2 }, num);
+  const D = Array.from({ length: 2 }, () => { const digs = shuffle(digitsOf(num(), w), rnd);
+    const big = +[...digs].sort((a, b) => b - a).join(''); const s = [...digs].sort((a, b) => a - b);
+    if (s[0] === 0) { const k = s.findIndex(x => x > 0); [s[0], s[k]] = [s[k], s[0]]; }
+    return { digs, big, small: +s.join('') }; });
+  return { w, A, B, Br, C, D };
+}
+
+function render() {
+  applyLang(lang); const T = P[lang], S = STR[lang];
+  document.title = T.worksheet;
+  document.getElementById('seedL').textContent = T.sheet;
+  document.getElementById('back').textContent = T.back;
+  document.getElementById('back').href = `index.html?lang=${lang}`;
+  document.getElementById('home').textContent = lang === 'he' ? 'כל המשחקים' : 'All games';
+  document.getElementById('print').textContent = T.print;
+  document.getElementById('lang').value = lang;
+  const lv = document.getElementById('level');
+  lv.innerHTML = S.levels.map((t, i) => `<option value="${i + 1}" ${i + 1 === level ? 'selected' : ''}>${T.level} ${i + 1}: ${t}</option>`).join('');
+  document.getElementById('seed').value = seed;
+  history.replaceState(null, '', `?lang=${lang}&level=${level}&seed=${seed}`);
+
+  const s = makeSheet(), w = s.w, ex = 3246, exW = 4, exD = digitsOf(ex, exW);
+  const foot = `<div class="foot"><span>${T.sheet} #<span class="ltr">${seed}</span> · ${T.level} ${level}</span><span class="ltr">bjornfadir.github.io/learn</span></div>`;
+  const header = title => `<h2>${title}</h2><div class="meta"><span>${T.name}:</span><span>${T.date}:</span></div>`;
+  const blanksFor = n => housesFor(w).filter((p, i) => digitsOf(n, w)[i]).map(() => '<span class="blank s"></span>').join(' + ');
+  const L = lang === 'he' ? ['א', 'ב', 'ג', 'ד'] : ['A', 'B', 'C', 'D'], arrow = lang === 'he' ? '←' : '→';
+  const sections = ans => `
+    <section><h3>${L[0]}. ${T.A}</h3><div class="qs">${s.A.map((x, i) => `<div class="q">${i + 1}. ${underline(x.n, x.k)} ${arrow} ${ans ? `<span class="ans ltr">${fmt(x.a)}</span>` : '<span class="blank"></span>'}</div>`).join('')}</div></section>
+    <section><h3>${L[1]}. ${T.B}</h3><div class="qs one">${s.B.map((n, i) => `<div class="q">${i + 5}. <span class="ltr">${fmt(n)} = ${ans ? `<span class="ans">${expandedTxt(n, w)}</span>` : blanksFor(n)}</span></div>`).join('')}</div>
+      <h3 style="margin-top:3mm">${T.Br}</h3><div class="qs one">${s.Br.map((n, i) => `<div class="q">${i + 7}. <span class="ltr">${expandedTxt(n, w)} = ${ans ? `<span class="ans">${fmt(n)}</span>` : '<span class="blank"></span>'}</span></div>`).join('')}</div></section>
+    <section><h3>${L[2]}. ${T.C}</h3><div class="qs">${s.C.map((n, i) => `<div class="q">${i + 9}. ${N(n)}${pvTable(w, [{ cells: ans ? digitsOf(n, w) : [] }], { mini: true })}</div>`).join('')}</div></section>
+    <section><h3>${L[3]}. ${T.D}</h3><div class="qs one">${s.D.map((x, i) => `<div class="q">${i + 11}. <span class="ltr n">${x.digs.join('  ')}</span> &nbsp; ${T.big}: ${ans ? `<span class="ans ltr">${fmt(x.big)}</span>` : '<span class="blank"></span>'} &nbsp; ${T.small}: ${ans ? `<span class="ans ltr">${fmt(x.small)}</span>` : '<span class="blank"></span>'}</div>`).join('')}</div></section>`;
+
+  document.getElementById('out').innerHTML = `
+    <div class="sheet">
+      <h2>${T.chart}</h2><p class="intro">${T.chartIntro}</p>
+      ${pvTable(4, [{ cells: exD }, { cells: exD.map((d, i) => fmt(d * PLACE_VAL[PLACES[i]])), v: true }])}
+      <div class="times">${['×10', '×10', '×10'].map(t => `<span>← ${t}</span>`).join('')}</div>
+      <p class="q" style="margin:0">${T.example}: <span class="ltr n">${fmt(ex)} = ${expandedTxt(ex, 4)}</span></p>
+      ${pvTable(4, Array.from({ length: 7 }, () => ({ cells: [] })))}
+      ${foot}
+    </div>
+    <div class="sheet">${header(T.worksheet)}${sections(false)}${foot}</div>
+    <div class="sheet">${header(T.key)}${sections(true)}${foot}</div>`;
+}
+document.getElementById('lang').onchange = e => { lang = e.target.value; render(); };
+document.getElementById('level').onchange = e => { level = +e.target.value; render(); };
+document.getElementById('seed').onchange = e => { seed = +e.target.value || seed; render(); };
+document.getElementById('new').onclick = () => { seed = randInt(1000, 99999); render(); };
+document.getElementById('print').onclick = () => window.print();
+render();
+</script>

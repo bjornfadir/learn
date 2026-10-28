@@ -1,0 +1,59 @@
+/* Shared look for every game: colour tokens (light + dark), card layout, buttons, progress bar,
+   feedback, motion. Tablet- and phone-first, big tap targets. Uses logical properties so
+   Hebrew (dir="rtl") pages mirror correctly; numbers and place-value rows set dir="ltr" themselves. */
+:root{
+  --bg:#eaf6f4; --card:#ffffff; --ink:#173a3a; --muted:#5b7a78;
+  --sea:#1f8a83; --sun:#f3a712; --sun-ink:#9a5b00; --on-sea:#ffffff;
+  --berry:#d6456b; --leaf:#2f8a40; --line:#cfe5e1; --soft:#f3faf8;
+  /* Place-value houses: one colour per place, the same on every page and on paper */
+  --th:#7a3db5; --hu:#1f66b8; --te:#2a7d3a; --un:#c0501b;
+  --th-soft:#f1e8fa; --hu-soft:#e6f0fb; --te-soft:#e7f4e9; --un-soft:#fcece4;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Andika","Verdana",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f2222; --card:#163030; --ink:#e6f4f1; --muted:#9dbdb8;
+  --sea:#4cc3b9; --sun:#f6bd45; --sun-ink:#f6bd45; --on-sea:#0f2222;
+  --berry:#f0708f; --leaf:#6cc97c; --line:#264646; --soft:#1b3a3a;
+  --th:#c9a3f2; --hu:#8dbcf3; --te:#7fd18d; --un:#f5a57d;
+  --th-soft:#2c2340; --hu-soft:#1d2d42; --te-soft:#1d3524; --un-soft:#3a2a20; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f2222; --card:#163030; --ink:#e6f4f1; --muted:#9dbdb8;
+  --sea:#4cc3b9; --sun:#f6bd45; --sun-ink:#f6bd45; --on-sea:#0f2222;
+  --berry:#f0708f; --leaf:#6cc97c; --line:#264646; --soft:#1b3a3a;
+  --th:#c9a3f2; --hu:#8dbcf3; --te:#7fd18d; --un:#f5a57d;
+  --th-soft:#2c2340; --hu-soft:#1d2d42; --te-soft:#1d3524; --un-soft:#3a2a20; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;
+  padding-inline:max(16px,env(safe-area-inset-left,0px));padding-block:20px 40px}
+.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1.05;margin:0;text-wrap:balance}
+a.home{font-family:var(--display);font-weight:600;color:var(--muted);text-decoration:none;font-size:1rem}
+a.home:hover{color:var(--ink)}
+.stars{font-family:var(--display);font-size:1.3rem;font-weight:800;color:var(--sun-ink);font-variant-numeric:tabular-nums}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.modes button{font-family:var(--display);font-weight:600;font-size:1rem;padding:10px 6px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;line-height:1.15}
+.modes button[aria-pressed="true"]{border-color:var(--sea);background:var(--sea);color:var(--on-sea)}
+.card{background:var(--card);border:2px solid var(--line);border-radius:24px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;min-height:380px}
+@media (max-width:440px){.card{padding-inline:12px}}
+.progress{width:100%;display:flex;gap:6px}
+.progress i{flex:1;height:8px;border-radius:4px;background:var(--line)}
+.progress i.ok{background:var(--leaf)} .progress i.bad{background:var(--berry)} .progress i.now{background:var(--sun)}
+.btn{font-family:var(--display);font-weight:800;font-size:1.2rem;border:none;border-radius:16px;padding:12px 22px;cursor:pointer;color:var(--on-sea);background:var(--sea);touch-action:manipulation}
+.btn.sun{background:var(--sun);color:#3a2800} .btn.ghost{background:var(--soft);color:var(--ink);border:2px solid var(--line)}
+.btn.small{font-size:1rem;padding:8px 14px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,.modes button:focus-visible,button:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.feedback{font-family:var(--display);font-weight:800;font-size:1.4rem;min-height:1.6em;margin:0}
+.feedback.ok{color:var(--leaf)} .feedback.bad{color:var(--berry)}
+.note{color:var(--muted);font-size:.95rem;max-width:46ch;line-height:1.5;margin:0}
+.big{font-family:var(--display);font-size:2.2rem;font-weight:800;margin:0;line-height:1.1}
+.emoji{font-size:3.2rem;line-height:1}
+.credit{margin:0;text-align:center;color:var(--muted);font-size:.8rem}
+.ltr{direction:ltr;unicode-bidi:isolate}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pop{animation:pop .4s ease} .shake{animation:shake .3s ease 2}
+@media (prefers-reduced-motion:reduce){.pop,.shake{animation:none}}

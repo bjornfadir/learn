@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Place Value Houses</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&display=swap">
+<link rel="stylesheet" href="../../shared/base.css">
+<style>
+/* Houses: one coloured column per place, always LTR (Thousands on the left) even on Hebrew pages */
+.th{--c:var(--th);--cs:var(--th-soft)} .hu{--c:var(--hu);--cs:var(--hu-soft)} .te{--c:var(--te);--cs:var(--te-soft)} .un{--c:var(--un);--cs:var(--un-soft)}
+.houses{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px;width:100%;max-width:520px;direction:ltr}
+.house{border:3px solid var(--c);border-top:none;border-radius:0 0 14px 14px;background:var(--cs);display:flex;flex-direction:column;align-items:center;min-width:0}
+.roof{width:calc(100% + 6px);margin-inline:-3px;background:var(--c);color:var(--card);font-family:var(--display);font-weight:800;font-size:.95rem;line-height:1.1;
+  padding:22px 2px 6px;clip-path:polygon(50% 0,100% 38%,100% 100%,0 100%,0 38%);overflow-wrap:anywhere}
+.digit{font-family:var(--body);font-weight:700;font-size:3rem;line-height:1;padding:10px 0;color:var(--c);min-height:1.3em}
+.house.hl{box-shadow:0 0 0 4px var(--sun)} .house.ok{box-shadow:0 0 0 4px var(--leaf)} .house.bad{box-shadow:0 0 0 4px var(--berry)}
+.step{width:100%;border:none;background:transparent;color:var(--c);font-size:1.4rem;padding:6px 0;cursor:pointer;touch-action:manipulation}
+.step:active{background:var(--c);color:var(--card)}
+.house.slot{cursor:pointer}
+.worth{font-family:var(--display);font-weight:800;font-size:1rem;color:var(--c);padding-bottom:6px;font-variant-numeric:tabular-nums}
+@media (max-width:440px){.roof{font-size:.75rem;padding-top:18px}.digit{font-size:2.4rem}.houses{gap:5px}}
+/* Pictorial stage: blocks for each place, drawn with CSS (unit cube, ten rod, hundred flat, thousand cube) */
+.blocks{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;align-content:flex-start;padding:4px;min-height:24px}
+.b{background:var(--c);opacity:.85;border-radius:2px}
+.b.un{width:10px;height:10px}
+.b.te{width:10px;height:46px;background:repeating-linear-gradient(var(--c) 0 3.8px,var(--cs) 3.8px 4.6px)}
+.b.hu{width:30px;height:30px;background:repeating-linear-gradient(90deg,transparent 0 2.6px,var(--cs) 2.6px 3px),repeating-linear-gradient(transparent 0 2.6px,var(--cs) 2.6px 3px),var(--c)}
+.b.th{width:30px;height:30px;box-shadow:4px -4px 0 0 color-mix(in srgb,var(--c) 70%,#000)}
+/* Number displays */
+.num{font-family:var(--body);font-weight:700;font-size:3.2rem;letter-spacing:.06em;direction:ltr;unicode-bidi:isolate}
+.num .pick{background:var(--sun);color:#3a2800;border-radius:10px;padding:0 6px}
+.num .pick2{background:var(--sea);color:var(--on-sea);border-radius:10px;padding:0 6px}
+.expanded{font-family:var(--body);font-weight:700;font-size:1.4rem;direction:ltr;unicode-bidi:isolate;line-height:1.6}
+.expanded .term{color:var(--c)}
+.words{font-family:var(--display);font-weight:600;font-size:1.5rem;line-height:1.3;max-width:24ch}
+.label{font-family:var(--display);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.tip{background:var(--soft);border:2px dashed var(--sun);border-radius:16px;padding:12px 16px;font-size:1.05rem;line-height:1.5;max-width:40ch;margin:0}
+.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;max-width:420px}
+.choice{font-family:var(--body);font-weight:700;font-size:2rem;padding:12px 8px;border-radius:18px;border:3px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer;direction:ltr;touch-action:manipulation}
+.choice.right{border-color:var(--leaf);color:var(--leaf)} .choice.wrong{border-color:var(--berry);color:var(--berry)}
+.tiles{display:flex;gap:10px;justify-content:center;direction:ltr}
+.tile{font-family:var(--body);font-weight:700;font-size:2rem;width:60px;height:64px;border-radius:14px;border:3px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.tile:disabled{opacity:.25;cursor:default}
+.topbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--display);font-weight:600;font-size:.95rem;padding:6px 12px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.lang{font-family:var(--display);font-weight:800}
+</style>
+
+<div class="wrap">
+  <header>
+    <a class="home" id="home" href="../../">← All games</a>
+    <div class="stars" id="stars">⭐ 0</div>
+  </header>
+  <h1 id="title"></h1>
+  <div class="topbar">
+    <div class="chips" id="levels" role="group"></div>
+    <div class="chips" role="group" aria-label="Language">
+      <button class="chip lang" data-lang="en">English</button><button class="chip lang" data-lang="he">עברית</button>
+    </div>
+  </div>
+  <nav class="modes" id="modes"></nav>
+  <main class="card" id="card"></main>
+  <p class="credit" id="credit"></p>
+</div>
+
+<script src="../../shared/core.js"></script>
+<script src="../../shared/audio.js"></script>
+<script src="pv.js"></script>
+<script>
+let lang = pickLang(), S = STR[lang];
+let level = +store.get('pv-level', 1) || 1, mode = 'learn';
+let queue = [], idx = 0, results = [];
+const card = document.getElementById('card');
+const stars = starCounter('pv-stars', document.getElementById('stars'));
+const MODES = ['learn', 'worth', 'build', 'biggest', 'swap'];
+const NEXT = { worth: 'build', build: 'biggest', biggest: 'swap', swap: 'worth' };
+const width = () => LEVELS[level - 1].digits;
+const clip = k => lang + '_' + k;
+const sayNum = (n, before = [], after = []) => Voice.chain([...before.map(clip), ...numClips(n, lang), ...after.map(clip)], null, null, 60);
+
+/* ---------- chrome: language, level, modes ---------- */
+function chrome() {
+  applyLang(lang); S = STR[lang];
+  document.title = S.title;
+  document.getElementById('title').textContent = S.title;
+  document.getElementById('home').textContent = S.home;
+  document.getElementById('credit').textContent = S.voice;
+  document.querySelectorAll('.lang').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
+  const lv = document.getElementById('levels');
+  lv.setAttribute('aria-label', S.level);
+  lv.innerHTML = S.levels.map((t, i) => `<button class="chip" data-l="${i + 1}" aria-pressed="${i + 1 === level}">${t}</button>`).join('');
+  lv.querySelectorAll('.chip').forEach(b => b.onclick = () => { level = +b.dataset.l; store.set('pv-level', level); chrome(); start(mode); });
+  const md = document.getElementById('modes');
+  md.innerHTML = MODES.map(m => `<button data-m="${m}" aria-pressed="${m === mode}">${S.modes[m]}</button>`).join('') + `<button data-m="print">${S.modes.print}</button>`;
+  md.querySelectorAll('button').forEach(b => b.onclick = () => b.dataset.m === 'print' ? location.href = `print.html?lang=${lang}&level=${level}` : start(b.dataset.m));
+  Voice.load('audio/' + lang);
+}
+document.querySelectorAll('.lang').forEach(b => b.onclick = () => { lang = b.dataset.lang; chrome(); start(mode); });
+
+/* ---------- house rendering ---------- */
+function houses(digs, opt = {}) {
+  const ps = housesFor(digs.length);
+  return `<div class="houses" style="--n:${digs.length}">${ps.map((p, i) => `
+    <div class="house ${p} ${(opt.cls && opt.cls[i]) || ''}" data-i="${i}">
+      <div class="roof">${S.place[p]}</div>
+      ${opt.steps ? `<button class="step" data-i="${i}" data-d="1" aria-label="${S.place[p]} +1">▲</button>` : ''}
+      <div class="digit">${digs[i] === null ? '' : digs[i]}</div>
+      ${opt.steps ? `<button class="step" data-i="${i}" data-d="-1" aria-label="${S.place[p]} −1">▼</button>` : ''}
+      ${opt.worth ? `<div class="worth">${digs[i] === null ? '' : fmt(digs[i] * PLACE_VAL[p])}</div>` : ''}
+      ${opt.blocks ? `<div class="blocks">${Array.from({ length: digs[i] || 0 }, () => `<i class="b ${p}"></i>`).join('')}</div>` : ''}
+    </div>`).join('')}</div>`;
+}
+function expanded(n, w) {
+  const ps = housesFor(w), d = digitsOf(n, w);
+  const terms = ps.map((p, i) => d[i] ? `<span class="term ${p}">${fmt(d[i] * PLACE_VAL[p])}</span>` : '').filter(Boolean);
+  return `<div class="expanded">${fmt(n)} = ${terms.join(' + ') || '0'}</div>`;
+}
+const numHTML = (n, w, picks = {}) => `<div class="num">${fmt(n).split('').map((c, k, arr) => {
+  const pos = arr.slice(0, k + 1).filter(x => x !== ',').length - 1;   // digit index, skipping commas
+  return c === ',' ? ',' : picks[pos] ? `<span class="${picks[pos]}">${c}</span>` : c;
+}).join('')}</div>`;
+
+/* ---------- Learn: explore the houses (pictorial stage) ---------- */
+let learnDigs = null, learnLevel = 0;
+function learn() {
+  const w = width();
+  if (!learnDigs || learnLevel !== level) { learnDigs = digitsOf(makeNumber(level), w); learnLevel = level; }
+  const draw = () => {
+    const n = +learnDigs.join('');
+    const zeroAt = learnDigs.findIndex((d, i) => d === 0 && i > 0 && learnDigs.slice(0, i).some(x => x));
+    card.innerHTML = `
+      <p class="note">${S.learnIntro}</p>
+      ${houses(learnDigs, { steps: true, worth: true, blocks: true })}
+      <p class="note">${S.learnHow}</p>
+      <p class="label">${S.expanded}</p>${expanded(n, w)}
+      <p class="label">${S.inWords}</p><p class="words">${n ? numWords(n, lang) : numWords(0, lang)}</p>
+      ${zeroAt >= 0 ? `<p class="tip">${S.zeroTip(S.place[housesFor(w)[zeroAt]])}</p>` : ''}
+      <div class="row"><button class="btn ghost" id="hear">${S.hear}</button><button class="btn sun" id="rnd">${S.newNum}</button></div>`;
+    card.querySelectorAll('.step').forEach(b => b.onclick = () => {
+      const i = +b.dataset.i; let v = learnDigs[i] + +b.dataset.d;
+      const lo = i === 0 && w > 1 ? 1 : 0;              // the biggest house can't be 0
+      learnDigs[i] = v > 9 ? lo : v < lo ? 9 : v; draw();
+    });
+    document.getElementById('hear').onclick = () => sayNum(n);
+    document.getElementById('rnd').onclick = () => { learnDigs = digitsOf(makeNumber(level), w); draw(); sayNum(+learnDigs.join('')); };
+  };
+  draw();
+  Voice.later(() => Voice.say(clip('intro')), 250);
+}
+
+/* ---------- rounds ---------- */
+function start(m) {
+  Voice.hush(); mode = m;
+  document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m));
+  if (m === 'learn') return learn();
+  queue = Array.from({ length: 10 }, () => makeNumber(level)); idx = 0; results = []; next();
+}
+function next() { Voice.hush(); if (idx >= queue.length) return finish(); ({ worth, build, biggest, swap })[mode](queue[idx]); }
+function feedback(ok, extraHTML, sayAfter = []) {
+  results[idx] = ok; if (ok) stars.add();
+  const r = Math.floor(Math.random() * 4);
+  const f = card.querySelector('.feedback');
+  f.className = 'feedback ' + (ok ? 'ok pop' : 'bad'); f.textContent = ok ? S.praise[r] : S.almost;
+  card.querySelector('.answer').innerHTML = extraHTML || '';
+  Voice.chain([clip(ok ? 'p' + r : 'almost'), ...sayAfter], null, null, 120);
+  const b = document.createElement('button'); b.className = 'btn'; b.textContent = idx < queue.length - 1 ? S.next : S.score;
+  b.onclick = () => { idx++; next(); }; card.appendChild(b); setTimeout(() => b.focus(), 50);
+}
+const shell = inner => `${progressBar(queue.length, idx, results)}${inner}<p class="feedback" role="status"></p><div class="answer"></div>`;
+
+/* 1. What is the digit worth? (the 4 in 3,246 -> 40) */
+function worth(n) {
+  const w = width(), d = digitsOf(n, w), ps = housesFor(w);
+  const cand = d.map((x, i) => x ? i : -1).filter(i => i >= 0);
+  const i = cand[Math.floor(Math.random() * cand.length)], v = d[i] * PLACE_VAL[ps[i]];
+  const opts = shuffle(ps.map(p => d[i] * PLACE_VAL[p]));
+  card.innerHTML = shell(`<p class="big">${S.worthQ}</p>${numHTML(n, w, { [i]: 'pick' })}
+    <div class="choices">${opts.map(o => `<button class="choice" data-v="${o}">${fmt(o)}</button>`).join('')}</div>`);
+  Voice.later(() => Voice.say(clip('worthQ')), 250);
+  card.querySelectorAll('.choice').forEach(b => b.onclick = () => {
+    card.querySelectorAll('.choice').forEach(c => { c.disabled = true; if (+c.dataset.v === v) c.classList.add('right'); });
+    const ok = +b.dataset.v === v; if (!ok) b.classList.add('wrong', 'shake');
+    feedback(ok, `${houses(d, { cls: d.map((_, k) => k === i ? 'hl' : '') })}<p class="tip">${S.worthA(d[i], S.place[ps[i]], fmt(v))}</p>`, numClips(v, lang));
+  });
+}
+
+/* 2. Build it: hear/read the number, set each house with ▲▼ */
+function build(n) {
+  const w = width(), target = digitsOf(n, w), cur = Array(w).fill(0);
+  card.innerHTML = shell(`<p class="label">${S.buildQ}</p><p class="words">${numWords(n, lang)}</p>
+    <button class="btn ghost small" id="hear">${S.hear}</button><div id="hs"></div>
+    <button class="btn" id="check">${S.check}</button>`);
+  const hs = document.getElementById('hs'); hs.style.width = '100%'; hs.style.display = 'flex'; hs.style.justifyContent = 'center';
+  const draw = (cls) => {
+    hs.innerHTML = houses(cur, { steps: !cls, cls });
+    hs.querySelectorAll('.step').forEach(b => b.onclick = () => { const i = +b.dataset.i; cur[i] = (cur[i] + +b.dataset.d + 10) % 10; draw(); });
+  };
+  draw();
+  document.getElementById('hear').onclick = () => sayNum(n);
+  Voice.later(() => sayNum(n, ['buildQ']), 250);
+  document.getElementById('check').onclick = e => {
+    e.target.remove();
+    const cls = cur.map((x, i) => x === target[i] ? 'ok' : 'bad'); draw(cls);
+    const ok = cls.every(c => c === 'ok');
+    feedback(ok, ok ? expanded(n, w) : `${houses(target)}${expanded(n, w)}`);
+  };
+}
+
+/* 3. Biggest / smallest number from the given digits (tap tiles into houses) */
+function biggest(n) {
+  const w = width(), digs = shuffle(digitsOf(n, w)), wantBig = Math.random() < 0.5 || w < 2;
+  const sorted = [...digs].sort((a, b) => wantBig ? b - a : a - b);
+  if (!wantBig && sorted[0] === 0) { const k = sorted.findIndex(x => x > 0); [sorted[0], sorted[k]] = [sorted[k], sorted[0]]; }
+  const best = +sorted.join(''); let picked = [];
+  card.innerHTML = shell(`<p class="big" style="font-size:1.6rem">${wantBig ? S.biggestQ : S.smallestQ}</p>
+    <div id="hs" style="width:100%;display:flex;justify-content:center"></div>
+    <div class="tiles">${digs.map((d, k) => `<button class="tile" data-k="${k}">${d}</button>`).join('')}</div>
+    <button class="btn ghost small" id="undo">${S.undo}</button>`);
+  const hs = document.getElementById('hs');
+  const draw = cls => { hs.innerHTML = houses(Array.from({ length: w }, (_, i) => picked[i] === undefined ? null : digs[picked[i]]), { cls }); };
+  draw();
+  Voice.later(() => Voice.say(clip(wantBig ? 'biggestQ' : 'smallestQ')), 250);
+  document.getElementById('undo').onclick = () => { const k = picked.pop(); if (k !== undefined) { card.querySelector(`.tile[data-k="${k}"]`).disabled = false; draw(); } };
+  card.querySelectorAll('.tile').forEach(t => t.onclick = () => {
+    t.disabled = true; picked.push(+t.dataset.k); draw();
+    if (picked.length < w) return;
+    card.querySelectorAll('.tile,#undo').forEach(b => b.disabled = true);
+    const made = +picked.map(k => digs[k]).join(''), ok = made === best && String(made).length === w;
+    draw(Array(w).fill(ok ? 'ok' : 'bad'));
+    const tip = `<p class="tip">${wantBig ? S.bigTip : S.smallTip}${!wantBig && digs.includes(0) ? ' ' + S.noZeroFirst : ''}</p>`;
+    feedback(ok, ok ? '' : `${houses(digitsOf(best, w))}${tip}`, numClips(best, lang));
+  });
+}
+
+/* 4. Swap it: swap two digits; did the number get bigger or smaller? */
+function swap(n) {
+  const w = Math.max(width(), 2), d = digitsOf(n, w), ps = housesFor(w);
+  let i, j, tries = 0;
+  do { i = randInt(0, w - 2); j = randInt(i + 1, w - 1); tries++; } while ((d[i] === d[j] || (i === 0 && d[j] === 0)) && tries < 50);
+  if (d[i] === d[j]) { d[j] = (d[j] + 1) % 10 || 1; n = +d.join(''); }    // make sure the swap changes something
+  const s = [...d]; [s[i], s[j]] = [s[j], s[i]];
+  const m = +s.join(''), up = m > n;
+  card.innerHTML = shell(`<p class="big" style="font-size:1.5rem">${S.swapQ}</p>
+    ${houses(d, { cls: d.map((_, k) => k === i || k === j ? 'hl' : '') })}
+    <div class="choices"><button class="choice" data-up="1" style="font-size:1.5rem">${S.bigger}</button><button class="choice" data-up="0" style="font-size:1.5rem">${S.smaller}</button></div>`);
+  Voice.later(() => Voice.say(clip('swapQ')), 250);
+  card.querySelectorAll('.choice').forEach(b => b.onclick = () => {
+    card.querySelectorAll('.choice').forEach(c => { c.disabled = true; if (!!+c.dataset.up === up) c.classList.add('right'); });
+    const ok = !!+b.dataset.up === up; if (!ok) b.classList.add('wrong', 'shake');
+    // explain with the digit that moved to the bigger house (it was at j, now at i)
+    const moved = d[j];
+    feedback(ok, `${houses(s, { cls: s.map((_, k) => k === i || k === j ? 'hl' : '') })}
+      <p class="expanded">${fmt(n)} → ${fmt(m)}</p>
+      <p class="tip">${S.swapA(moved, S.place[ps[j]], S.place[ps[i]])} ${fmt(moved * PLACE_VAL[ps[j]])} → ${fmt(moved * PLACE_VAL[ps[i]])}</p>`, [clip(up ? 'bigger' : 'smaller')]);
+  });
+}
+
+function finish() {
+  Voice.hush();
+  const got = results.filter(Boolean).length; if (got === queue.length) stars.add(5);
+  card.innerHTML = `<div class="emoji pop">${got === 10 ? '🏆' : got >= 7 ? '🌟' : '💪'}</div>
+    <p class="big ltr">${got} ${S.of} ${queue.length}</p><p class="note">${S.end[0](got)}</p>
+    <div class="row"><button class="btn ghost" id="again">${S.again}</button><button class="btn sun" id="nx">${S.nextMode}</button></div>`;
+  document.getElementById('again').onclick = () => start(mode);
+  document.getElementById('nx').onclick = () => start(NEXT[mode]);
+  if (got === 10) Voice.say(clip('done10'));
+}
+
+chrome(); start('learn');
+</script>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Learning Games</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭐</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&display=swap">
+<link rel="stylesheet" href="shared/base.css">
+<style>
+/* Portal: subjects, each with its game cards; grade filter; stars from each game's storage key */
+.sub-h{font-family:var(--display);font-weight:800;font-size:1.5rem;margin:8px 0 0;display:flex;align-items:baseline;gap:10px}
+.sub-h .he{font-weight:600;color:var(--muted);font-size:1.1rem}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+a.game{display:flex;gap:14px;align-items:flex-start;padding:16px;border-radius:20px;border:2px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none}
+a.game:hover,a.game:focus-visible{border-color:var(--sea);outline:none}
+.game .e{font-size:2.6rem;line-height:1}
+.game h3{font-family:var(--display);font-weight:800;font-size:1.25rem;margin:0;line-height:1.15}
+.game .he{font-family:var(--display);font-weight:600;color:var(--muted);font-size:1rem;margin:2px 0 0}
+.game p.d{margin:6px 0 0;font-size:.95rem;line-height:1.45;color:var(--muted)}
+.game .meta{display:flex;gap:10px;margin-top:8px;font-family:var(--display);font-weight:600;font-size:.9rem;flex-wrap:wrap}
+.game .meta .s{color:var(--sun-ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--display);font-weight:600;font-size:.95rem;padding:6px 12px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.empty{color:var(--muted)}
+</style>
+<div class="wrap">
+  <header><h1>Learning Games <span class="he" style="font-weight:600;color:var(--muted);font-size:1.3rem">· משחקי למידה</span></h1></header>
+  <p class="note" style="max-width:none">Short, playful practice games. Progress and stars are saved on this device only. No accounts, no ads.</p>
+  <div class="chips" id="grades" role="group" aria-label="Grade"></div>
+  <main id="list"></main>
+</div>
+<script src="shared/core.js"></script>
+<script>
+let grade = store.get('portal-grade', 0);
+(async () => {
+  const data = await (await fetch('games.json')).json();
+  const gs = [...new Set(data.games.flatMap(g => g.grades))].sort((a, b) => a - b);
+  const draw = () => {
+    const el = document.getElementById('grades');
+    el.innerHTML = [0, ...gs].map(g => `<button class="chip" data-g="${g}" aria-pressed="${g === grade}">${g ? 'Grade ' + g : 'All grades'}</button>`).join('');
+    el.querySelectorAll('.chip').forEach(b => b.onclick = () => { grade = +b.dataset.g; store.set('portal-grade', grade); draw(); });
+    const show = data.games.filter(g => !grade || g.grades.includes(grade));
+    document.getElementById('list').innerHTML = data.subjects.map(s => {
+      const list = show.filter(g => g.subject === s.id);
+      if (!list.length) return '';
+      return `<h2 class="sub-h">${s.emoji} ${esc(s.name)} <span class="he" lang="he">${esc(s.he)}</span></h2><div class="games">${list.map(g => `
+        <a class="game" href="${g.path}"><span class="e">${g.emoji}</span><span>
+          <h3>${esc(g.title)}</h3>${g.he ? `<p class="he" lang="he" dir="rtl">${esc(g.he)}</p>` : ''}
+          <p class="d">${esc(g.desc)}</p>
+          <span class="meta"><span>Grades ${g.grades[0]}–${g.grades[g.grades.length - 1]}</span><span class="s">⭐ ${+store.get(g.stars, 0) || 0}</span></span>
+        </span></a>`).join('')}</div>`;
+    }).join('') || '<p class="empty">No games for this grade yet.</p>';
+  };
+  draw();
+})();
+</script>
