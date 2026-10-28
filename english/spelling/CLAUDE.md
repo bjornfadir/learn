@@ -28,6 +28,8 @@ english/spelling/
   tts/clips.json       clip key -> [text, speed]
   tts/gen.py           renders clips.json with Kokoro TTS -> tts/audio_<voice>.json (base64 MP3 data URIs)
   tts/audio_lily.json  the current 60 clips (ElevenLabs Lily)
+  words/long-e.json   the My words lexicon; words/clips.py writes audio/words/clips.json from it
+  audio/words/         My words clips as separate MP3 files + index.json (not embedded; playKey falls back to them)
 ```
 
 `src/game.html` carries its own doctype, charset and viewport tags so it also works on hosts other than claude.ai.
@@ -47,6 +49,13 @@ Plain HTML, CSS and vanilla JS in one file. No framework and no build step beyon
 2. **🔤 ee or ea?** — "f _ _ t": pick ee or ea.
 3. **🧩 Unscramble** — tap jumbled letter tiles in order (with Undo).
 4. **✏️ Spelling Test** — hear the word and type it. Wrong letters are highlighted.
+5. **🌟 My words** (added 2026-10-28) — the child types other ee/ea words they know, on the on-screen keyboard, and builds a collection in three columns: ee team, ea team, 🤔 Tricky. Words are checked against `words/long-e.json` (92 ee, 72 ea, "both" = seaweed, 51 tricky words with what their pair really says, sound-alike pairs):
+   - long-e word -> collected, +1 star, word + "It's on the double E team!" spoken; a sound-alike (see/sea) gets a tip
+   - tricky word (bread, great, bear, early, heart, ear, deer) -> collected in Tricky with the sound it makes instead ("says 'eh' like in bed")
+   - near miss -> "Did you mean treat?" (`nearMiss`: ee<->ea swapped, or a single e doubled), one tap adds the fix
+   - unknown with ee/ea -> "Ask a grown-up", and a "👍 A grown-up checked it" button adds it (no audio); no ee/ea -> try another
+   - with 3+ collected long-e words, **Quiz my words** runs the ee-or-ea round on the child's own words (mode `mquiz`)
+   The collection is stored in `localStorage` `ee-mywords`. Keep the word list kid-level and drop homographs (read, lead, tear).
 
 Rounds are the 10 words shuffled, with a progress bar. The end screen shows the score, the missed words to practise, and a button to the next mode (ee/ea → unscramble → test). Stars are saved in `localStorage` key `ee-stars`, with +5 for a perfect round.
 
@@ -65,6 +74,8 @@ Audio is **pre-generated**, not live TTS. This is because:
 - Browser `speechSynthesis` sounded poor and differed between devices.
 
 Clips were made with **Kokoro v1.0** (ONNX), voice **`af_heart`** (US English, female, its best-rated voice), at speeds 0.8–0.9. Phonemes come from **espeak-ng** (`--ipa`, `en-us`). The clips are encoded as 48 kbps mono MP3 and embedded as data URIs in `<script type="application/json" id="clips">`.
+
+My words audio (word clips `w_<word>` and phrases `my_*`) is rendered with the shared tool: `python3 words/clips.py && python3 ../../tools/voice.py audio/words/clips.json audio/words --lang en` (~1,670 characters, only changed text re-renders).
 
 Clip keys (from `mkclips.py`):
 - `w_<word>` — the word; `s_<word>` — its sentence; `t_<word>` — its memory trick read aloud

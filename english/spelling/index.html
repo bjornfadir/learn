@@ -33,10 +33,17 @@ h1 .ee{color:var(--sea)} h1 .ea{color:var(--sun-ink)}
 a.home{font-family:var(--display);font-weight:600;color:var(--muted);text-decoration:none;font-size:1rem;align-self:flex-start}
 a.home:hover{color:var(--ink)}
 .stars{font-family:var(--display);font-size:1.3rem;font-weight:800;color:var(--sun-ink);font-variant-numeric:tabular-nums}
-.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .modes button{font-family:var(--display);font-weight:600;font-size:1rem;padding:10px 6px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;line-height:1.15}
 .modes button[aria-pressed="true"]{border-color:var(--sea);background:var(--sea);color:var(--on-sea)}
-@media (max-width:480px){.modes{grid-template-columns:repeat(2,1fr)}}
+/* My words: the child's own collection, three columns (ee team, ea team, tricky words) */
+.mine{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}
+@media (max-width:440px){.mine{grid-template-columns:1fr 1fr}.mine .tricky{grid-column:1/-1}}
+.mine .col{border:2px solid var(--line);border-radius:16px;padding:8px;background:var(--soft);min-width:0}
+.mine .col.ee{border-color:var(--sea)} .mine .col.ea{border-color:var(--sun)} .mine .col.tricky{border-color:var(--berry);border-style:dashed}
+.mine h3{font-family:var(--display);font-size:1rem;margin:0 0 6px}
+.mine .chipw{display:inline-block;margin:3px;padding:4px 8px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:700;font-size:1.05rem;cursor:pointer;color:var(--ink)}
+.mine .empty{color:var(--muted);font-size:.85rem}
 .card{background:var(--card);border:2px solid var(--line);border-radius:24px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;min-height:380px}
 .progress{width:100%;display:flex;gap:6px}
 .progress i{flex:1;height:8px;border-radius:4px;background:var(--line)}
@@ -120,6 +127,7 @@ input.spell{font-family:var(--body);font-size:2.2rem;font-weight:700;letter-spac
     <button id="m-eeea" data-mode="eeea" aria-pressed="false">🔤 ee or ea?</button>
     <button id="m-scramble" data-mode="scramble" aria-pressed="false">🧩 Unscramble</button>
     <button id="m-spell" data-mode="spell" aria-pressed="false">✏️ Spelling Test</button>
+    <button id="m-mywords" data-mode="mywords" aria-pressed="false">🌟 My words</button>
   </nav>
   <main class="card" id="card"></main>
   <p class="credit">Voice by ElevenLabs</p>
@@ -152,7 +160,9 @@ let CLIPS={};try{CLIPS=JSON.parse(document.getElementById('clips').textContent)}
 /* One shared <audio>: iOS only lets an element play outside a tap once a tap has played it,
    and chained clips run after awaits, so a fresh Audio() per clip can be blocked. */
 const player=new Audio();let chainId=0,pending=null;
-function playKey(k){return new Promise(res=>{try{if(pending)pending();pending=res;if(!CLIPS[k])return res();player.onended=player.onerror=res;player.src=CLIPS[k];const pr=player.play();if(pr)pr.catch(res)}catch(e){res()}})}
+/* Clips not embedded (My words: the word list and its phrases) are files in audio/words/, listed in its index.json */
+let MORE=new Set();fetch('audio/words/index.json',{cache:'no-cache'}).then(r=>r.ok?r.json():[]).then(k=>{MORE=new Set(k)}).catch(()=>{});
+function playKey(k){return new Promise(res=>{try{if(pending)pending();pending=res;const src=CLIPS[k]||(MORE.has(k)?'audio/words/'+k+'.mp3':null);if(!src)return res();player.onended=player.onerror=res;player.src=src;const pr=player.play();if(pr)pr.catch(res)}catch(e){res()}})}
 /* Stop speech and cancel delayed auto-play when the screen changes */
 let autoT=[];
 function later(f,ms){autoT.push(setTimeout(f,ms))}
@@ -184,6 +194,8 @@ function start(m){
   hush();mode=m;
   document.querySelectorAll('.modes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
   if(m==='learn')return learn();
+  if(m==='mywords')return mywords();
+  if(m==='mquiz'){queue=shuffle(quizWords()).slice(0,10);idx=0;results=[];return next()}
   queue=shuffle(WORDS);idx=0;results=[];next();
 }
 function progress(){return '<div class="progress">'+queue.map((_,i)=>`<i class="${i<idx?(results[i]?'ok':'bad'):i===idx?'now':''}"></i>`).join('')+'</div>'}
@@ -297,7 +309,7 @@ function next(){
   hush();
   if(idx>=queue.length)return finish();
   const x=queue[idx];
-  ({eeea,scramble,spell})[mode](x);
+  ({eeea,scramble,spell,mquiz:eeea})[mode](x);
 }
 function feedbackThen(ok,x,html){
   results[idx]=ok; if(ok)addStar();
@@ -386,8 +398,8 @@ function spell(x){
 function finish(){
   const got=results.filter(Boolean).length, missed=queue.filter((_,i)=>!results[i]);
   const bonus=got===queue.length?5:0; if(bonus)addStar(bonus);
-  const nextMode={eeea:'scramble',scramble:'spell',spell:'spell'}[mode];
-  const nextLabel={eeea:'Try Unscramble →',scramble:'Try the Spelling Test →',spell:'Take the test again →'}[mode];
+  const nextMode={eeea:'scramble',scramble:'spell',spell:'spell',mquiz:'mywords'}[mode];
+  const nextLabel={eeea:'Try Unscramble →',scramble:'Try the Spelling Test →',spell:'Take the test again →',mquiz:'Find more words →'}[mode];
   card.innerHTML=`<div class="emoji pop">${got===10?'🏆':got>=7?'🌟':'💪'}</div>
   <p class="big">${got} out of ${queue.length}</p>
   <p class="note">${got===10?'Perfect score! +5 bonus stars.':got>=7?'Really good! Practise the ones below.':'Good effort. Keep practising these words:'}</p>
@@ -397,6 +409,107 @@ function finish(){
   document.getElementById('again').onclick=()=>start(mode);
   document.getElementById('nx').onclick=()=>start(nextMode);
   say(got===10?'done10':'score'+got);
+}
+/* ---------- MY WORDS: the child types other ee/ea words they know ----------
+   words/long-e.json: ee/ea long-e words, "both" (seaweed), tricky words (ee/ea that don't say long e,
+   with what they say), and sound-alike pairs. Typed words are checked against it:
+   long-e word -> collected (+1 star, read aloud); tricky -> collected in its own column with why;
+   near miss (ee<->ea swapped, or a single e) -> "Did you mean ...?"; unknown -> a grown-up can confirm it.
+   The collection is in localStorage 'ee-mywords' as [{w, team: 'ee'|'ea'|'both'|'tricky', says?, grownup?}]. */
+let LEX=null, mine=[];
+try{mine=JSON.parse(localStorage.getItem('ee-mywords')||'[]')}catch(e){}
+const saveMine=()=>{try{localStorage.setItem('ee-mywords',JSON.stringify(mine))}catch(e){}};
+const SAYS={eh:'says "eh" like in <b>bed</b>',ay:'says "ay" like in <b>day</b>',air:'says "air" like in <b>hair</b>',ur:'says "ur" like in <b>fur</b>',
+  ar:'says "ar" like in <b>car</b>',ear:'makes the "ear" sound, like in <b>ear</b>',eer:'makes the "ear" sound, like in <b>ear</b>'};
+async function loadLex(){
+  if(LEX)return LEX;
+  try{const j=await (await fetch('words/long-e.json',{cache:'no-cache'})).json();
+    const team={};j.ee.forEach(w=>team[w]='ee');j.ea.forEach(w=>team[w]='ea');j.both.forEach(w=>team[w]='both');
+    WORDS.forEach(x=>team[x.w]=vowel(x.w));
+    const homo={};j.homophones.forEach(([a,b])=>{homo[a]=b;homo[b]=a});
+    LEX={team,tricky:j.tricky,homo};
+  }catch(e){LEX={team:Object.fromEntries(WORDS.map(x=>[x.w,vowel(x.w)])),tricky:{},homo:{}}}
+  return LEX;
+}
+const known=w=>LEX.team[w]||(LEX.tricky[w]?'tricky':null);
+function nearMiss(w){
+  const c=new Set();
+  for(let i=0;i<w.length-1;i++){const two=w.slice(i,i+2);
+    if(two==='ee')c.add(w.slice(0,i)+'ea'+w.slice(i+2)); if(two==='ea')c.add(w.slice(0,i)+'ee'+w.slice(i+2));}
+  for(let i=0;i<w.length;i++)if(w[i]==='e'&&w[i+1]!=='e'&&w[i+1]!=='a'&&w[i-1]!=='e'){c.add(w.slice(0,i)+'ee'+w.slice(i+1));c.add(w.slice(0,i)+'ea'+w.slice(i+1));}
+  return [...c].find(x=>known(x)&&x!==w);
+}
+/* colour every ee/ea pair (seaweed has both); tricky words stay plain because their pair isn't a long e */
+const colorAll=w=>esc(w).replace(/ee|ea/g,v=>`<span class="${v}-c">${v}</span>`);
+const showWord=w=>known(w)==='tricky'?`<b>${esc(w)}</b>`:colorAll(w);
+const teamOf=w=>w.includes('ee')&&w.includes('ea')?'both':w.includes('ee')?'ee':'ea';
+const quizWords=()=>mine.filter(m=>(m.team==='ee'||m.team==='ea')&&m.w.split(m.team).length===2).map(m=>({w:m.w,e:'🌟',s:''}));
+function mineHTML(){
+  const col=(t,h)=>{const ws=mine.filter(m=>t==='tricky'?m.team==='tricky':(m.team===t||m.team==='both'));
+    return `<div class="col ${t}"><h3>${h} <span class="note">(${ws.length})</span></h3>${ws.length?ws.map(m=>`<button class="chipw" data-w="${m.w}">${t==='tricky'?esc(m.w):colorAll(m.w)}${m.grownup?' 👍':''}</button>`).join(''):'<span class="empty">none yet</span>'}</div>`};
+  return `<div class="mine">${col('ee','<span class="ee-c">ee</span> team')}${col('ea','<span class="ea-c">ea</span> team')}${col('tricky','🤔 Tricky')}</div>`;
+}
+async function mywords(msg){
+  hush(); await loadLex();
+  const n=quizWords().length;
+  card.innerHTML=`<p class="big">🌟 My words</p>
+  <p class="note">Do you know more words with <b class="ee-c">ee</b> or <b class="ea-c">ea</b>? Type one and check it!</p>
+  <form id="f" class="row" autocomplete="off">
+    <label for="ans" class="note" style="width:100%">Type a word:</label>
+    <input class="spell" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="none" maxlength="14">
+    <button class="btn" type="submit" id="check">Check ✓</button>
+  </form>
+  ${keyboard()}
+  <div class="feedback" role="status"></div><div class="answer" id="mwAns"></div>
+  ${mineHTML()}
+  ${n>=3?`<button class="btn sun" id="quiz">Quiz my words (${n}) →</button>`:`<p class="note">Find ${3-n} more ee or ea word${3-n===1?'':'s'} to unlock a quiz of your own words.</p>`}`;
+  const inp=document.getElementById('ans');wireKeys(inp);setTimeout(()=>inp.focus(),100);
+  card.querySelectorAll('.chipw').forEach(b=>b.onclick=()=>say('w_'+b.dataset.w));
+  const q=document.getElementById('quiz');if(q)q.onclick=()=>start('mquiz');
+  if(msg)showResult(msg); else later(()=>say('my_intro'),250);
+  document.getElementById('f').onsubmit=e=>{e.preventDefault();const w=inp.value.trim().toLowerCase().replace(/[^a-z]/g,'');if(w)checkMine(w)};
+}
+function addMine(entry){ if(!mine.some(m=>m.w===entry.w)){mine.push(entry);saveMine();addStar();return true} return false }
+function checkMine(w){
+  const t=known(w), have=mine.some(m=>m.w===w);
+  if(!/ee|ea/.test(w)){const fix=nearMiss(w);
+    return mywords(fix?{kind:'near',w,fix}:{kind:'nopair',w});}
+  if(have)return mywords({kind:'again',w});
+  if(t==='tricky'){addMine({w,team:'tricky',says:LEX.tricky[w]});return mywords({kind:'tricky',w,says:LEX.tricky[w]})}
+  if(t){addMine({w,team:t});return mywords({kind:'yes',w,team:t})}
+  const fix=nearMiss(w);
+  return mywords(fix?{kind:'near',w,fix}:{kind:'unknown',w});
+}
+function showResult(r){
+  const f=card.querySelector('.feedback'), a=document.getElementById('mwAns'), W=`<b>${esc(r.w)}</b>`;
+  const ok=(cls,txt)=>{f.className='feedback '+cls;f.innerHTML=txt};
+  if(r.kind==='yes'){
+    ok('ok pop',`Yes! ${colorAll(r.w)} ${r.team==='both'?'has <b class="ee-c">ee</b> and <b class="ea-c">ea</b>!':`is on the <b class="${r.team}-c">${r.team}</b> team!`} ⭐`);
+    const h=LEX.homo[r.w];
+    a.innerHTML=h?`<p class="trick">👂 <b>${esc(r.w)}</b> and <b>${esc(h)}</b> sound the same, but they are spelled differently and mean different things!</p>`:'';
+    say(['w_'+r.w,r.team==='both'?'my_both':'my_'+r.team]);
+  }else if(r.kind==='tricky'){
+    ok('ok pop',`Great spelling! ⭐`);
+    const pair=r.w.includes('ea')?'ea':'ee';
+    a.innerHTML=`<p class="trick">🤔 <b>${esc(r.w)}</b> is a <b>tricky</b> word: its <b>${pair}</b> ${SAYS[r.says]||'makes a different sound'}, not a long e. It goes in the Tricky column.</p>`;
+    say(['w_'+r.w,'my_tricky']);
+  }else if(r.kind==='near'){
+    ok('bad',`Almost! Did you mean ${colorWord(r.fix)}?`);
+    a.innerHTML=`<p class="note">You wrote ${W}. Check which team it is on: ${colorWord(r.fix)}.</p><button class="btn sun small" id="takeFix">Yes, add ${esc(r.fix)}</button>`;
+    document.getElementById('takeFix').onclick=()=>checkMine(r.fix);
+    say(['my_almost','w_'+r.fix]);
+  }else if(r.kind==='unknown'){
+    ok('bad',`Hmm, I don't know ${W} yet.`);
+    a.innerHTML=`<p class="note">Is it a real word? Ask a grown-up to check the spelling.</p><button class="btn ghost small" id="grown">👍 A grown-up checked it</button>`;
+    document.getElementById('grown').onclick=()=>{addMine({w:r.w,team:teamOf(r.w),grownup:true});mywords({kind:'grown',w:r.w})};
+    say('my_unknown');
+  }else if(r.kind==='grown'){
+    ok('ok pop',`Added ${colorWord(r.w)}! ⭐`); a.innerHTML='';
+  }else if(r.kind==='again'){
+    ok('ok',`You already found ${showWord(r.w)}! Try another one.`); a.innerHTML=''; say('my_again');
+  }else{
+    ok('bad',`${W} has no <b class="ee-c">ee</b> or <b class="ea-c">ea</b>. Try another word!`); a.innerHTML=''; say('my_nopair');
+  }
 }
 learn();
 </script>

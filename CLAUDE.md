@@ -46,7 +46,7 @@ A new *word list* or *number range* for an existing game should be data, not new
 
 - Voice "Lily" `pFZP5JQG7iQjIQuC4Bku`. English uses `eleven_multilingual_v2`. **Hebrew must use `eleven_v3` with `language_code: "he"`**: `multilingual_v2` returned audio that was not Hebrew at all (checked by Adam on 2026-10-28).
 - The key lives in `~/.config/elevenlabs/api_key` (chmod 600, outside the repo). It only has text-to-speech permission and can't list voices or read the quota.
-- Free tier, about 10,000 characters a month, so the "Voice by ElevenLabs" credit stays on every page with audio. As of 2026-10-28 roughly 6,300 characters have been used (spelling ~2,500, numbers + place value ~3,100, compare ~530). Check before big re-renders.
+- Free tier, about 10,000 characters a month, so the "Voice by ElevenLabs" credit stays on every page with audio. As of 2026-10-28 roughly 8,000 characters have been used (spelling ~2,500, spelling My words ~1,670, numbers + place value ~3,100, compare ~530), leaving ~2,000 until the monthly reset. Check before big re-renders.
 - **Pronunciation:** respell only the part that comes out wrong, in the game's clip text. Write letter names as capitals ("B.") and sounds as respellings ("Eee!"). Use `<break time="0.3s" />` for short pauses (multilingual_v2 only). Long pauses plus slow speed sounded like a hypnotist.
 - Numbers are spoken by chaining short clips (`en_t3` "three thousand", `en_h2`, `en_and`, `en_n46`) with a 60 ms gap, so any number from 1 to 9,999 needs only ~140 clips per language.
 
