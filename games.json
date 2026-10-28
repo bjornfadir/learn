@@ -1,20 +1,62 @@
 {
   "subjects": [
-    { "id": "english", "name": "English", "he": "אנגלית", "emoji": "🔤" },
-    { "id": "math", "name": "Maths", "he": "חשבון", "emoji": "➗" }
+    {
+      "id": "english",
+      "name": "English",
+      "he": "אנגלית",
+      "emoji": "🔤"
+    },
+    {
+      "id": "math",
+      "name": "Maths",
+      "he": "חשבון",
+      "emoji": "➗"
+    }
   ],
   "games": [
     {
-      "id": "spelling-long-ee-ea", "subject": "english", "emoji": "🐦",
-      "title": "Long ee & ea Quest", "he": "",
+      "id": "spelling-long-ee-ea",
+      "subject": "english",
+      "emoji": "🐦",
+      "title": "Long ee & ea Quest",
+      "he": "",
       "desc": "Learn 10 spelling words with the long e sound, then play ee-or-ea, unscramble and a spelling test.",
-      "grades": [2, 3], "path": "english/spelling/", "stars": "ee-stars"
+      "grades": [
+        2,
+        3
+      ],
+      "path": "english/spelling/",
+      "stars": "ee-stars"
     },
     {
-      "id": "place-value", "subject": "math", "emoji": "🏠",
-      "title": "Place Value Houses", "he": "בתים של ערך המקום",
+      "id": "place-value",
+      "subject": "math",
+      "emoji": "🏠",
+      "title": "Place Value Houses",
+      "he": "בתים של ערך המקום",
       "desc": "Thousands, hundreds, tens and units: explore the houses, four games and printable worksheets. English or Hebrew.",
-      "grades": [2, 3, 4], "path": "math/place-value/", "stars": "pv-stars"
+      "grades": [
+        2,
+        3,
+        4
+      ],
+      "path": "math/place-value/",
+      "stars": "pv-stars"
+    },
+    {
+      "id": "compare",
+      "subject": "math",
+      "emoji": "🐊",
+      "title": "Hungry Crocodile",
+      "he": "התנין הרעב",
+      "desc": "Greater than, less than: the crocodile eats the bigger number. Compare house by house, three games and printable worksheets. English or Hebrew.",
+      "grades": [
+        2,
+        3,
+        4
+      ],
+      "path": "math/compare/",
+      "stars": "cmp-stars"
     }
   ]
 }

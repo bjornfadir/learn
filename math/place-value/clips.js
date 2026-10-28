@@ -1,4 +1,4 @@
-// Writes audio/<lang>/clips.json ({key: text}) from pv.js, for tools/voice.py:
+// Writes audio/<lang>/clips.json (this module's phrases; numbers are in shared/numbers/) for tools/voice.py:
 //   node clips.js && python3 ../../tools/voice.py audio/en/clips.json audio/en --lang en
 //                 && python3 ../../tools/voice.py audio/he/clips.json audio/he --lang he
 const fs = require('fs');

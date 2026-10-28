@@ -17,3 +17,15 @@ function starCounter(key, el) {
   return { add(k = 1) { n += k; show(); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); store.set(key, n); } };
 }
 const progressBar = (n, idx, results) => '<div class="progress">' + Array.from({ length: n }, (_, i) => `<i class="${i < idx ? (results[i] ? 'ok' : 'bad') : i === idx ? 'now' : ''}"></i>`).join('') + '</div>';
+/* Language: one portal-wide choice (learn-lang) so Hebrew carries across games; ?lang=he|en overrides.
+   Older place-value visits stored pv-lang, so fall back to it. */
+function pickLang() {
+  const q = new URLSearchParams(location.search).get('lang');
+  const l = q === 'he' || q === 'en' ? q : store.get('learn-lang', store.get('pv-lang', 'en'));
+  return l === 'he' ? 'he' : 'en';
+}
+function applyLang(lang) {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+  store.set('learn-lang', lang);
+}

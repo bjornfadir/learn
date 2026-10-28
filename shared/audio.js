@@ -1,6 +1,7 @@
 /* Shared voice player for every game.
-   Clips are MP3 files in a folder with an index.json listing the keys that exist:
-     Voice.load('audio/en')  ->  audio/en/index.json + audio/en/<key>.mp3
+   Clips are MP3 files in folders, each with an index.json listing the keys it has:
+     Voice.load(['../../shared/numbers/en', 'audio/en'])  ->  <dir>/index.json + <dir>/<key>.mp3
+   Spoken numbers come from shared/numbers/<lang>/, so every maths game reuses them.
    One shared <audio> element is reused, because iOS only lets an element play outside a tap
    once a tap has played it, and chained clips run after awaits.
    say(key | [keys]) plays in order; chain(keys, onEach(i), done, gap) adds a per-clip callback.
@@ -10,13 +11,13 @@
    waits for it, so a slow earlier fetch can't leave the other language's clips loaded. */
 const Voice = (() => {
   const player = new Audio();
-  let dir = '', have = new Set(), chainId = 0, pending = null, timers = [], loadId = 0, loading = null;
-  function load(d) {
-    const id = ++loadId; dir = d; have = new Set();
+  let have = new Map(), chainId = 0, pending = null, timers = [], loadId = 0, loading = null;   // key -> folder
+  function load(dirs) {
+    const id = ++loadId; have = new Map();
     // no-cache revalidates (cheap 304), so a list that 404'd before a deploy isn't reused from cache
-    loading = fetch(d + '/index.json', { cache: 'no-cache' })
-      .then(r => r.ok ? r.json() : []).catch(() => [])
-      .then(keys => { if (id === loadId) { have = new Set(keys); loading = null; } });
+    loading = Promise.all([].concat(dirs).map(d => fetch(d + '/index.json', { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : []).catch(() => []).then(keys => keys.map(k => [k, d]))))
+      .then(lists => { if (id === loadId) { have = new Map(lists.flat()); loading = null; } });
     return loading;
   }
   async function play(k) {
@@ -26,7 +27,7 @@ const Voice = (() => {
         if (pending) pending(); pending = res;
         if (!have.has(k)) return res();
         player.onended = player.onerror = res;
-        player.src = dir + '/' + k + '.mp3';
+        player.src = have.get(k) + '/' + k + '.mp3';
         const p = player.play(); if (p) p.catch(res);
       } catch (e) { res(); }
     });

@@ -1,0 +1,18 @@
+{
+"en_gt": "is greater than",
+"en_lt": "is less than",
+"en_intro": "The hungry crocodile always eats the bigger number!",
+"en_eq": "The numbers are equal.",
+"en_feedBig": "Feed the crocodile the bigger number!",
+"en_feedSmall": "Which number is smaller?",
+"en_symbolQ": "Which symbol goes in the middle?",
+"en_tfQ": "Is this true?",
+"en_true": "True!",
+"en_false": "False!",
+"en_p0": "Great job!",
+"en_p1": "Super!",
+"en_p2": "You got it!",
+"en_p3": "Brilliant!",
+"en_almost": "Almost! Look carefully.",
+"en_done10": "Perfect score! Well done!"
+}

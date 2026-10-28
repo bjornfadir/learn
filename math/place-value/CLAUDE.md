@@ -3,26 +3,26 @@
 Place value up to thousands (Thousands, Hundreds, Tens, Units) for a 3rd grader just starting the topic, part of the Learning Games portal (`../../CLAUDE.md`). Live at https://bjornfadir.github.io/learn/math/place-value/ . Built 2026-10-28 from the parent's teaching plan below.
 
 ## Decisions (2026-10-28)
-- English and Hebrew, switchable (remembered per device in `pv-lang`, `?lang=he|en` overrides). Hebrew is RTL, but numbers and rows of houses stay LTR, with Thousands on the left.
+- English and Hebrew, switchable (remembered per device in the portal-wide `learn-lang`, `?lang=he|en` overrides). Hebrew is RTL, but numbers and rows of houses stay LTR, with Thousands on the left.
 - Always "Units", never "Ones". Commas for thousands in both languages (3,246).
 - Interactive games plus printable sheets. Colour printing is available, and each place keeps the same colour on screen and on paper (`--th --hu --te --un` in `shared/base.css`; print.html hard-codes the light values).
 
 ## Files
 ```
-pv.js        shared by both pages: levels + makeNumber, digits/houses helpers, numbers in words (EN British "and",
-             HE feminine counting forms with the joining ו on the last element), clip keys per number, all UI text (STR)
+pv.js        shared by both pages: all UI text (STR) and the module's phrase clips. Levels, makeNumber, houses
+             helpers and numbers in words/clips moved to ../../shared/numbers.js (shared with math/compare)
 index.html   game: 🏠 Houses explorer (Concrete -> Pictorial: ▲▼ per house, blocks, worth, expanded form, words,
              zero tip), 🔍 What is it worth?, 🧱 Build it (from words + voice), 🏆 Biggest/smallest, 🔄 Swap it, 🖨️ Print
 print.html   A4 portrait: chart (houses, x10 arrows, example 3,246, blank rows), one-page worksheet, answer key.
              Seeded (`?lang=&level=&seed=`), so a sheet can be regenerated; Print uses the browser's print dialog
-clips.js     node clips.js -> audio/<lang>/clips.json ({key: text} from pv.js), then render with tools/voice.py
-audio/en, audio/he   rendered MP3s + index.json (+ texts.json, so changed text re-renders only that clip)
+clips.js     node clips.js -> audio/<lang>/clips.json (phrases only), then render with tools/voice.py
+audio/en, audio/he   phrase MP3s + index.json (+ texts.json). Spoken numbers live in ../../shared/numbers/<lang>/
 ```
 Levels: 1 = 2 digits, 2 = 3 digits, 3 = 4 digits, 4 = 4 digits with placeholder zeros (3,046; 4,005; 7,010). Stars are in `pv-stars`, the level in `pv-level`.
 
 Worksheet sections (one page = one ~10 minute session): A. worth of an underlined digit, B. expanded form and reverse, C. fill the houses, D. biggest/smallest from given digits. The smallest number may not start with 0, and the game explains why.
 
-Regenerate audio after changing any text in `STR[lang].say` or the number words:
+Regenerate audio after changing any text in `STR[lang].say` (number words: see `shared/numbers/clips.js`):
 `node clips.js && python3 ../../tools/voice.py audio/en/clips.json audio/en --lang en && python3 ../../tools/voice.py audio/he/clips.json audio/he --lang he`
 
 ## Not done yet

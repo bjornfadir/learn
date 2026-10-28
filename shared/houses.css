@@ -1,0 +1,14 @@
+/* Place-value houses, shared by the maths games. Wrap columns in .houses (style="--n:<columns>"), each
+   column a .house.<th|hu|te|un> with a .roof label and a .digit. Always LTR: Thousands on the left. */
+.th{--c:var(--th);--cs:var(--th-soft)} .hu{--c:var(--hu);--cs:var(--hu-soft)} .te{--c:var(--te);--cs:var(--te-soft)} .un{--c:var(--un);--cs:var(--un-soft)}
+.houses{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px;width:100%;max-width:520px;direction:ltr}
+.house{border:3px solid var(--c);border-top:none;border-radius:0 0 14px 14px;background:var(--cs);display:flex;flex-direction:column;align-items:center;min-width:0}
+.roof{width:calc(100% + 6px);margin-inline:-3px;background:var(--c);color:var(--card);font-family:var(--display);font-weight:800;font-size:.95rem;line-height:1.1;
+  padding:22px 2px 6px;clip-path:polygon(50% 0,100% 38%,100% 100%,0 100%,0 38%);overflow-wrap:anywhere}
+.digit{font-family:var(--body);font-weight:700;font-size:3rem;line-height:1;padding:10px 0;color:var(--c);min-height:1.3em}
+.house.hl{box-shadow:0 0 0 4px var(--sun)} .house.ok{box-shadow:0 0 0 4px var(--leaf)} .house.bad{box-shadow:0 0 0 4px var(--berry)}
+.step{width:100%;border:none;background:transparent;color:var(--c);font-size:1.4rem;padding:6px 0;cursor:pointer;touch-action:manipulation}
+.step:active{background:var(--c);color:var(--card)}
+.house.slot{cursor:pointer}
+.worth{font-family:var(--display);font-weight:800;font-size:1rem;color:var(--c);padding-bottom:6px;font-variant-numeric:tabular-nums}
+@media (max-width:440px){.roof{font-size:.75rem;padding-top:18px}.digit{font-size:2.4rem}.houses{gap:5px}}

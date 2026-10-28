@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hungry Crocodile</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&display=swap">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../../shared/houses.css">
+<style>
+/* Crocodile green, readable in both themes */
+:root{--croc:#2f8a40}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--croc:#6cc97c}}
+:root[data-theme="dark"]{--croc:#6cc97c}
+.croc{display:block}
+.legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.legend > span{display:flex;align-items:center;gap:6px;font-family:var(--display);font-weight:600;font-size:1rem}
+/* Two numbers stacked in shared house columns (shorter number has empty leading houses) */
+.house .digit.b{border-top:2px dashed var(--c);width:100%}
+.house.dim{opacity:.45}
+/* "A ? B" row: always LTR so the symbol sits between the numbers the way it is written */
+.sentence{display:flex;align-items:center;justify-content:center;gap:10px;direction:ltr;flex-wrap:wrap}
+.n{font-family:var(--body);font-weight:700;font-size:2.6rem;font-variant-numeric:tabular-nums}
+.slot{width:76px;height:62px;border:3px dashed var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:var(--muted)}
+.pick2{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:460px;direction:ltr}
+.numbtn{font-family:var(--body);font-weight:700;font-size:2.3rem;padding:18px 8px;border-radius:20px;border:3px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer;touch-action:manipulation;font-variant-numeric:tabular-nums}
+.symbtns{display:flex;gap:12px;justify-content:center;direction:ltr}
+.symbtn{width:92px;height:84px;border-radius:18px;border:3px solid var(--line);background:var(--soft);cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+.tfbtns{display:flex;gap:12px;justify-content:center}
+.choice{font-family:var(--display);font-weight:800;font-size:1.4rem;padding:12px 22px;border-radius:18px;border:3px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.right{border-color:var(--leaf)!important;box-shadow:0 0 0 3px var(--leaf)} .wrong{border-color:var(--berry)!important}
+.eaten{animation:gulp .5s ease forwards}
+@keyframes gulp{50%{transform:scale(1.15)}100%{transform:scale(.92);opacity:.6}}
+@media (prefers-reduced-motion:reduce){.eaten{animation:none}}
+.says{font-family:var(--display);font-weight:800;font-size:1.3rem;margin:0}
+.tip{background:var(--soft);border:2px dashed var(--sun);border-radius:16px;padding:12px 16px;font-size:1.05rem;line-height:1.5;max-width:40ch;margin:0}
+.topbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--display);font-weight:600;font-size:.95rem;padding:6px 12px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+@media (max-width:440px){.n{font-size:2rem}.numbtn{font-size:1.8rem}.symbtn{width:80px;height:72px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <a class="home" id="home" href="../../">← All games</a>
+    <div class="stars" id="stars">⭐ 0</div>
+  </header>
+  <h1 id="title"></h1>
+  <div class="topbar">
+    <div class="chips" id="levels" role="group"></div>
+    <div class="chips" role="group" aria-label="Language">
+      <button class="chip lang" data-lang="en">English</button><button class="chip lang" data-lang="he">עברית</button>
+    </div>
+  </div>
+  <nav class="modes" id="modes"></nav>
+  <main class="card" id="card"></main>
+  <p class="credit" id="credit"></p>
+</div>
+
+<script src="../../shared/core.js"></script>
+<script src="../../shared/audio.js"></script>
+<script src="../../shared/numbers.js"></script>
+<script src="cmp.js"></script>
+<script>
+const LEVEL_NAMES = { en: ['2 digits', '3 digits', '4 digits', 'With zeros'], he: ['2 ספרות', '3 ספרות', '4 ספרות', 'עם אפסים'] };
+const UI = { en: { home: '← All games', voice: 'Voice by ElevenLabs', level: 'Level', next: 'Next →', score: 'See my score →', again: 'Play again', nextMode: 'Next game →', of: 'out of',
+                   praise: ['Great job! 🎉', 'Super! 🌟', 'You got it! 💪', 'Brilliant! ✨'], almost: 'Almost! Look carefully:',
+                   end: g => g === 10 ? 'Perfect score! +5 bonus stars.' : g >= 7 ? 'Really good!' : 'Good effort. Try again and it gets easier!' },
+             he: { home: 'כל המשחקים →', voice: 'הקול: ElevenLabs', level: 'רמה', next: 'הבא ←', score: 'לתוצאה שלי ←', again: 'לשחק שוב', nextMode: 'למשחק הבא ←', of: 'מתוך',
+                   praise: ['כל הכבוד! 🎉', 'מעולה! 🌟', 'הצלחת! 💪', 'מצוין! ✨'], almost: 'כמעט! הסתכלו טוב:',
+                   end: g => g === 10 ? 'ציון מושלם! 5 כוכבי בונוס.' : g >= 7 ? 'יפה מאוד!' : 'ניסיון יפה. בפעם הבאה זה יהיה קל יותר!' } };
+let lang = pickLang(), S = CSTR[lang], U = UI[lang];
+let level = +store.get('cmp-level', 1) || 1, mode = 'learn';
+let queue = [], idx = 0, results = [];
+const card = document.getElementById('card');
+const stars = starCounter('cmp-stars', document.getElementById('stars'));
+const MODES = ['learn', 'feed', 'symbol', 'tf'];
+const NEXT = { feed: 'symbol', symbol: 'tf', tf: 'feed' };
+const clip = k => lang + '_' + k;
+const N = n => `<span class="ltr">${fmt(n)}</span>`;
+
+function chrome() {
+  applyLang(lang); S = CSTR[lang]; U = UI[lang];
+  document.title = S.title;
+  document.getElementById('title').textContent = S.title;
+  document.getElementById('home').textContent = U.home;
+  document.getElementById('credit').textContent = U.voice;
+  document.querySelectorAll('.lang').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
+  const lv = document.getElementById('levels'); lv.setAttribute('aria-label', U.level);
+  lv.innerHTML = LEVEL_NAMES[lang].map((t, i) => `<button class="chip" data-l="${i + 1}" aria-pressed="${i + 1 === level}">${t}</button>`).join('');
+  lv.querySelectorAll('.chip').forEach(b => b.onclick = () => { level = +b.dataset.l; store.set('cmp-level', level); chrome(); start(mode); });
+  const md = document.getElementById('modes');
+  md.innerHTML = MODES.map(m => `<button data-m="${m}" aria-pressed="${m === mode}">${S.modes[m]}</button>`).join('') + `<button data-m="print">${S.modes.print}</button>`;
+  md.querySelectorAll('button').forEach(b => b.onclick = () => b.dataset.m === 'print' ? location.href = `print.html?lang=${lang}&level=${level}` : start(b.dataset.m));
+  Voice.load(['../../shared/numbers/' + lang, 'audio/' + lang]);
+}
+document.querySelectorAll('.lang').forEach(b => b.onclick = () => { lang = b.dataset.lang; chrome(); start(mode); });
+
+/* Both numbers in the same house columns; hl = column index to highlight, dimBefore = columns already checked */
+function pairHouses(a, b, opt = {}) {
+  const w = Math.max(String(a).length, String(b).length), ps = PLACES.slice(4 - w);
+  const da = String(a).padStart(w, ' ').split(''), db = String(b).padStart(w, ' ').split('');
+  return `<div class="houses" style="--n:${w}">${ps.map((p, i) => `
+    <div class="house ${p} ${opt.hl === i ? 'hl' : ''} ${opt.dimBefore > i ? 'dim' : ''}">
+      <div class="roof">${S.place[p]}</div>
+      <div class="digit">${da[i].trim()}</div><div class="digit b">${db[i].trim()}</div>
+    </div>`).join('')}</div>`;
+}
+/* The "why" sentence for a pair */
+function whyText(a, b) {
+  const y = why(a, b), big = Math.max(a, b), small = Math.min(a, b);
+  if (y.kind === 'eq') return S.whyEq;
+  if (y.kind === 'len') return S.whyLen(N(big), N(small), String(big).length, String(small).length);
+  const ps = PLACES.slice(4 - y.w);
+  return S.whyPlace(S.place[ps[y.i]], digitsOf(big, y.w)[y.i], digitsOf(small, y.w)[y.i]);
+}
+const sentence = (a, b, mid) => `<div class="sentence"><span class="n">${fmt(a)}</span>${mid}<span class="n">${fmt(b)}</span></div>`;
+const statement = (a, b) => `${sentence(a, b, croc(sym(a, b), 56))}<p class="says">${N(a)} ${S.sym[sym(a, b)]}${N(b)}</p>`;
+const explain = (a, b) => { const y = why(a, b); return `${pairHouses(a, b, { hl: y.kind === 'place' ? y.i : y.kind === 'len' ? 0 : undefined })}<p class="tip">${whyText(a, b)}</p>`; };
+const sayPair = (a, b, before = []) => Voice.chain([...before, ...sentenceClips(a, b, lang)], null, null, 60);
+
+/* ---------- Learn ---------- */
+let learnPair = null, learnLevel = 0;
+function learn() {
+  if (!learnPair || learnLevel !== level) { learnPair = makePair(level); learnLevel = level; }
+  const [a, b] = learnPair, y = why(a, b);
+  card.innerHTML = `<p class="note">${S.learnIntro}</p>
+    <div class="legend">${['<', '>', '='].map(s => `<span>${croc(s, 40)}<bdo dir="ltr">${esc(s)}</bdo> ${S.legend[s]}</span>`).join('')}</div>
+    <p class="note">${S.learnHow}</p>
+    <div id="hs" style="width:100%;display:flex;justify-content:center">${pairHouses(a, b)}</div>
+    <p class="tip" id="stepTxt" hidden></p>
+    <div id="answer" hidden>${statement(a, b)}</div>
+    <div class="row"><button class="btn sun" id="step">${S.step}</button><button class="btn ghost" id="new">${S.newPair}</button></div>`;
+  const hs = document.getElementById('hs'), txt = document.getElementById('stepTxt'), ans = document.getElementById('answer');
+  document.getElementById('new').onclick = () => { learnPair = makePair(level); learn(); };
+  document.getElementById('step').onclick = () => {
+    Voice.hush(); ans.hidden = true; txt.hidden = false;
+    const ps = PLACES.slice(4 - y.w), da = digitsOf(a, y.w), db = digitsOf(b, y.w);
+    const stop = y.kind === 'eq' ? y.w : y.kind === 'len' ? 0 : y.i;
+    let k = 0;
+    const tick = () => {
+      if (k < stop) {                                   // same digit: say so, move one house right
+        hs.innerHTML = pairHouses(a, b, { hl: k, dimBefore: k }); txt.innerHTML = S.stepSame(S.place[ps[k]], da[k]); k++;
+        Voice.later(tick, 1400); return;
+      }
+      hs.innerHTML = pairHouses(a, b, { hl: y.kind === 'eq' ? undefined : stop, dimBefore: stop });
+      txt.innerHTML = whyText(a, b); ans.hidden = false; sayPair(a, b);
+    };
+    tick();
+  };
+  Voice.later(() => Voice.say(clip('intro')), 250);
+}
+
+/* ---------- rounds ---------- */
+function start(m) {
+  Voice.hush(); mode = m;
+  document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m));
+  if (m === 'learn') return learn();
+  queue = Array.from({ length: 10 }, () => makePair(level, Math.random, m !== 'feed')); idx = 0; results = []; next();
+}
+function next() { Voice.hush(); if (idx >= queue.length) return finish(); ({ feed, symbol, tf })[mode](...queue[idx]); }
+const shell = inner => `${progressBar(queue.length, idx, results)}${inner}<p class="feedback" role="status"></p><div class="answer" style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%"></div>`;
+function feedback(ok, a, b, extra = []) {
+  results[idx] = ok; if (ok) stars.add();
+  const r = Math.floor(Math.random() * 4), f = card.querySelector('.feedback');
+  f.className = 'feedback ' + (ok ? 'ok pop' : 'bad'); f.textContent = ok ? U.praise[r] : U.almost;
+  card.querySelector('.answer').innerHTML = statement(a, b) + explain(a, b);
+  Voice.chain([...extra, clip(ok ? 'p' + r : 'almost'), ...sentenceClips(a, b, lang)], null, null, 80);
+  const btn = document.createElement('button'); btn.className = 'btn'; btn.textContent = idx < queue.length - 1 ? U.next : U.score;
+  btn.onclick = () => { idx++; next(); }; card.appendChild(btn); setTimeout(() => btn.focus(), 50);
+}
+
+/* 1. Feed the crocodile: tap the bigger (sometimes the smaller) number */
+function feed(a, b) {
+  const big = Math.random() < 0.7;
+  card.innerHTML = shell(`<div class="emoji">🐊</div><p class="big" style="font-size:1.5rem">${big ? S.feedBig : S.feedSmall}</p>
+    <div class="pick2"><button class="numbtn" data-v="${a}">${fmt(a)}</button><button class="numbtn" data-v="${b}">${fmt(b)}</button></div>`);
+  Voice.later(() => Voice.say(clip(big ? 'feedBig' : 'feedSmall')), 250);
+  const want = big ? Math.max(a, b) : Math.min(a, b);
+  card.querySelectorAll('.numbtn').forEach(x => x.onclick = () => {
+    card.querySelectorAll('.numbtn').forEach(y => { y.disabled = true; if (+y.dataset.v === want) y.classList.add('right'); });
+    const ok = +x.dataset.v === want;
+    if (ok && big) x.classList.add('eaten'); if (!ok) x.classList.add('wrong', 'shake');
+    feedback(ok, a, b);
+  });
+}
+
+/* 2. Pick the symbol: A ? B, tap <, = or > */
+function symbol(a, b) {
+  card.innerHTML = shell(`<p class="big" style="font-size:1.5rem">${S.symbolQ}</p>${sentence(a, b, '<span class="slot" id="slot">?</span>')}
+    <div class="symbtns">${['<', '=', '>'].map(s => `<button class="symbtn" data-s="${s}" aria-label="${s} ${S.legend[s]}">${croc(s, 60)}</button>`).join('')}</div>`);
+  Voice.later(() => sayPair(a, b, [clip('symbolQ')]), 250);
+  const want = sym(a, b);
+  card.querySelectorAll('.symbtn').forEach(x => x.onclick = () => {
+    card.querySelectorAll('.symbtn').forEach(y => { y.disabled = true; if (y.dataset.s === want) y.classList.add('right'); });
+    const ok = x.dataset.s === want; if (!ok) x.classList.add('wrong', 'shake');
+    document.getElementById('slot').innerHTML = croc(x.dataset.s, 52);
+    feedback(ok, a, b);
+  });
+}
+
+/* 3. True or false: a statement that is often wrong in the classic way */
+function tf(a, b) {
+  const real = sym(a, b);
+  const shown = Math.random() < 0.5 ? real : (real === '=' ? (Math.random() < 0.5 ? '<' : '>') : (Math.random() < 0.8 ? (real === '<' ? '>' : '<') : '='));
+  card.innerHTML = shell(`<p class="big" style="font-size:1.5rem">${S.tfQ}</p>${sentence(a, b, croc(shown, 56))}
+    <p class="says">${N(a)} ${S.sym[shown]}${N(b)}</p>
+    <div class="tfbtns"><button class="choice" data-t="1">${S.yes}</button><button class="choice" data-t="0">${S.no}</button></div>`);
+  Voice.later(() => Voice.say(clip('tfQ')), 250);
+  const want = shown === real;
+  card.querySelectorAll('.choice').forEach(x => x.onclick = () => {
+    card.querySelectorAll('.choice').forEach(y => { y.disabled = true; if (!!+y.dataset.t === want) y.classList.add('right'); });
+    const ok = !!+x.dataset.t === want; if (!ok) x.classList.add('wrong', 'shake');
+    feedback(ok, a, b, [clip(want ? 'true' : 'false')]);
+  });
+}
+
+function finish() {
+  Voice.hush();
+  const got = results.filter(Boolean).length; if (got === queue.length) stars.add(5);
+  card.innerHTML = `<div class="emoji pop">${got === 10 ? '🏆' : got >= 7 ? '🌟' : '🐊'}</div>
+    <p class="big ltr">${got} ${U.of} ${queue.length}</p><p class="note">${U.end(got)}</p>
+    <div class="row"><button class="btn ghost" id="again">${U.again}</button><button class="btn sun" id="nx">${U.nextMode}</button></div>`;
+  document.getElementById('again').onclick = () => start(mode);
+  document.getElementById('nx').onclick = () => start(NEXT[mode]);
+  if (got === 10) Voice.say(clip('done10'));
+}
+
+chrome(); start('learn');
+</script>

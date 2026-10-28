@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greater Than, Less Than Worksheet</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&display=swap">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../../shared/print.css">
+<style>
+/* One worksheet page + answer key. Crocodile legend on top, then A. symbols, B. circle the bigger, C. true/false */
+:root{--croc:#2f8a40}
+.legend{display:flex;gap:10mm;justify-content:center;font-family:var(--display);font-weight:600;font-size:13pt}
+.legend > span{display:flex;align-items:center;gap:2mm}
+.circle{display:inline-block;width:12mm;height:12mm;border:2px solid #577;border-radius:50%;vertical-align:middle;margin-inline:3mm;text-align:center;line-height:11mm;font-weight:700}
+.pair{display:inline-flex;gap:14mm;direction:ltr}
+.ring{outline:2.5px solid #c0501b;outline-offset:2mm;border-radius:8mm;padding:0 2mm}
+.tfbox{display:inline-block;min-width:16mm;margin-inline:2mm;padding:0 2mm;border:1.5px solid #577;border-radius:3mm;text-align:center;font-size:13pt}
+.croc{display:inline-block;vertical-align:middle}
+</style>
+
+<div class="controls screen-only">
+  <a class="home" href="../../" id="home">⌂</a>
+  <a class="home" id="back" href="index.html">←</a>
+  <select id="lang"><option value="en">English</option><option value="he">עברית</option></select>
+  <select id="level"></select>
+  <label><span id="seedL">Sheet</span> # <input id="seed" inputmode="numeric"></label>
+  <button class="btn ghost small" id="new">🎲</button>
+  <button class="btn small" id="print">🖨️</button>
+</div>
+<div id="out"></div>
+
+<script src="../../shared/core.js"></script>
+<script src="../../shared/numbers.js"></script>
+<script src="cmp.js"></script>
+<script>
+const P = {
+  en: { worksheet: 'Greater Than, Less Than', key: 'Answer Key', name: 'Name', date: 'Date', home: 'All games', back: '← Back to the games',
+        A: 'Write <, > or = in the circle', B: 'Circle the bigger number', C: 'True or false? Write T or F', T: 'T', F: 'F',
+        sheet: 'Sheet', print: '🖨️ Print', level: 'Level', levels: ['2 digits', '3 digits', '4 digits', 'With zeros'],
+        tip: 'The crocodile always eats the bigger number. Start at the biggest house!' },
+  he: { worksheet: 'גדול מ־, קטן מ־', key: 'פתרונות', name: 'שם', date: 'תאריך', home: 'כל המשחקים', back: 'חזרה למשחקים →',
+        A: 'כתבו <span class="ltr">&lt;</span>, <span class="ltr">&gt;</span> או <span class="ltr">=</span> בעיגול', B: 'הקיפו את המספר הגדול יותר', C: 'נכון או לא נכון? כתבו נ או ל', T: 'נ', F: 'ל',
+        sheet: 'דף', print: '🖨️ הדפסה', level: 'רמה', levels: ['2 ספרות', '3 ספרות', '4 ספרות', 'עם אפסים'],
+        tip: 'התנין תמיד אוכל את המספר הגדול יותר. מתחילים מהבית הגדול ביותר!' },
+};
+const q = new URLSearchParams(location.search);
+let lang = pickLang(), level = Math.min(4, Math.max(1, +(q.get('level') || store.get('cmp-level', 1)) || 1));
+let seed = +(q.get('seed')) || randInt(1000, 99999);
+const N = n => `<span class="ltr n">${fmt(n)}</span>`;
+
+function makeSheet() {
+  const rnd = seeded(seed);
+  const A = Array.from({ length: 8 }, () => makePair(level, rnd, true));
+  const B = Array.from({ length: 4 }, () => makePair(level, rnd, false));
+  const C = Array.from({ length: 4 }, () => { const [a, b] = makePair(level, rnd, false), real = sym(a, b);
+    const shown = rnd() < 0.5 ? real : (real === '<' ? '>' : '<'); return { a, b, shown, t: shown === real }; });
+  return { A, B, C };
+}
+function render() {
+  applyLang(lang); const T = P[lang];
+  document.title = T.worksheet;
+  document.getElementById('seedL').textContent = T.sheet;
+  document.getElementById('home').textContent = T.home;
+  document.getElementById('back').textContent = T.back;
+  document.getElementById('back').href = `index.html?lang=${lang}`;
+  document.getElementById('print').textContent = T.print;
+  document.getElementById('lang').value = lang;
+  document.getElementById('level').innerHTML = T.levels.map((t, i) => `<option value="${i + 1}" ${i + 1 === level ? 'selected' : ''}>${T.level} ${i + 1}: ${t}</option>`).join('');
+  document.getElementById('seed').value = seed;
+  history.replaceState(null, '', `?lang=${lang}&level=${level}&seed=${seed}`);
+  const s = makeSheet(), L = lang === 'he' ? ['א', 'ב', 'ג'] : ['A', 'B', 'C'];
+  const legend = `<div class="legend">${['<', '>', '='].map(x => `<span>${croc(x, 34)}<bdo dir="ltr">${esc(x)}</bdo> ${CSTR[lang].legend[x]}</span>`).join('')}</div><p class="intro" style="text-align:center">${T.tip}</p>`;
+  const foot = `<div class="foot"><span>${T.sheet} #<span class="ltr">${seed}</span> · ${T.level} ${level}</span><span class="ltr">bjornfadir.github.io/learn</span></div>`;
+  const body = ans => `<h2>${ans ? T.key : T.worksheet}</h2><div class="meta"><span>${T.name}:</span><span>${T.date}:</span></div>${legend}
+    <section><h3>${L[0]}. ${T.A}</h3><div class="qs">${s.A.map(([a, b], i) => `<div class="q">${i + 1}. <span class="ltr">${N(a)}<span class="circle ${ans ? 'ans' : ''}">${ans ? sym(a, b) : ''}</span>${N(b)}</span></div>`).join('')}</div></section>
+    <section><h3>${L[1]}. ${T.B}</h3><div class="qs">${s.B.map(([a, b], i) => `<div class="q">${i + 9}. <span class="pair">${[a, b].map(n => `<span class="ltr n ${ans && n === Math.max(a, b) ? 'ring' : ''}">${fmt(n)}</span>`).join('')}</span></div>`).join('')}</div></section>
+    <section><h3>${L[2]}. ${T.C}</h3><div class="qs">${s.C.map((x, i) => `<div class="q">${i + 13}. <span class="ltr n">${fmt(x.a)} ${x.shown} ${fmt(x.b)}</span><span class="tfbox ${ans ? 'ans' : ''}">${ans ? (x.t ? T.T : T.F) : '&nbsp;'}</span></div>`).join('')}</div></section>
+    ${foot}`;
+  document.getElementById('out').innerHTML = `<div class="sheet">${body(false)}</div><div class="sheet">${body(true)}</div>`;
+}
+document.getElementById('lang').onchange = e => { lang = e.target.value; render(); };
+document.getElementById('level').onchange = e => { level = +e.target.value; render(); };
+document.getElementById('seed').onchange = e => { seed = +e.target.value || seed; render(); };
+document.getElementById('new').onclick = () => { seed = randInt(1000, 99999); render(); };
+document.getElementById('print').onclick = () => window.print();
+render();
+</script>
