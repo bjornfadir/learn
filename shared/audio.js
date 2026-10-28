@@ -5,15 +5,22 @@
    once a tap has played it, and chained clips run after awaits.
    say(key | [keys]) plays in order; chain(keys, onEach(i), done, gap) adds a per-clip callback.
    A new call cancels the one playing. Missing keys are skipped silently.
-   hush() stops speech and cancels delayed auto-play queued with later(); call it on every screen change. */
+   hush() stops speech and cancels delayed auto-play queued with later(); call it on every screen change.
+   load() can be called again (language switch): only the latest call's list is used, and playback
+   waits for it, so a slow earlier fetch can't leave the other language's clips loaded. */
 const Voice = (() => {
   const player = new Audio();
-  let dir = '', have = new Set(), chainId = 0, pending = null, timers = [];
-  async function load(d) {
-    dir = d; have = new Set();
-    try { const r = await fetch(d + '/index.json'); if (r.ok) have = new Set(await r.json()); } catch (e) {}
+  let dir = '', have = new Set(), chainId = 0, pending = null, timers = [], loadId = 0, loading = null;
+  function load(d) {
+    const id = ++loadId; dir = d; have = new Set();
+    // no-cache revalidates (cheap 304), so a list that 404'd before a deploy isn't reused from cache
+    loading = fetch(d + '/index.json', { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : []).catch(() => [])
+      .then(keys => { if (id === loadId) { have = new Set(keys); loading = null; } });
+    return loading;
   }
-  function play(k) {
+  async function play(k) {
+    while (loading) await loading;   // loop: a newer load() may start while we wait
     return new Promise(res => {
       try {
         if (pending) pending(); pending = res;
