@@ -26,7 +26,7 @@ math/compare/          Hungry Crocodile: greater than / less than, EN/HE games +
 
 ## Adding a game
 
-1. Make `<subject>/<game>/index.html`. Link `../../shared/base.css`, `core.js`, `audio.js`, and a `← All games` link to `../../`. Every page carries its own doctype, charset and viewport tags.
+1. Make `<subject>/<game>/index.html`. Link `../../shared/base.css`, `core.js`, `audio.js`, and a `← All games` link to `../../`. Every page carries its own doctype, charset and viewport tags. Reference every local script and stylesheet as `file.js?v=dev` / `file.css?v=dev`: the deploy stamps `dev` with the commit hash, so a browser never mixes a new page with an old cached script. On 2026-10-28 that mix blanked every maths page for a returning visitor.
 2. Add it to `games.json`. `stars` is the game's localStorage key (`<game>-stars`); the portal shows it.
 3. Spoken lines: build a `{key: text}` clips file and render it with `python3 tools/voice.py <clips.json> <game>/audio/<lang> --lang <lang>`. Then `Voice.load(['../../shared/numbers/<lang>', 'audio/<lang>'])` in the game (maths games get every number for free).
 4. Test at 360-390 px phone width and in a tablet viewport: no horizontal scroll, every round completes, correct answers score. For RTL, check every number and place-value row stays LTR.

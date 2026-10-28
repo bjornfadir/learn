@@ -5,7 +5,7 @@
 <title>Learning Games</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭐</text></svg>">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&display=swap">
-<link rel="stylesheet" href="shared/base.css">
+<link rel="stylesheet" href="shared/base.css?v=dev">
 <style>
 /* Portal: subjects, each with its game cards; grade filter; stars from each game's storage key */
 .sub-h{font-family:var(--display);font-weight:800;font-size:1.5rem;margin:8px 0 0;display:flex;align-items:baseline;gap:10px}
@@ -30,11 +30,11 @@ a.game:hover,a.game:focus-visible{border-color:var(--sea);outline:none}
   <div class="chips" id="grades" role="group" aria-label="Grade"></div>
   <main id="list"></main>
 </div>
-<script src="shared/core.js"></script>
+<script src="shared/core.js?v=dev"></script>
 <script>
 let grade = store.get('portal-grade', 0);
 (async () => {
-  const data = await (await fetch('games.json')).json();
+  const data = await (await fetch('games.json', { cache: 'no-cache' })).json();
   const gs = [...new Set(data.games.flatMap(g => g.grades))].sort((a, b) => a - b);
   const draw = () => {
     const el = document.getElementById('grades');

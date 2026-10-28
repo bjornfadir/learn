@@ -5,8 +5,8 @@
 <title>Place Value Houses</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&display=swap">
-<link rel="stylesheet" href="../../shared/base.css">
-<link rel="stylesheet" href="../../shared/houses.css">
+<link rel="stylesheet" href="../../shared/base.css?v=dev">
+<link rel="stylesheet" href="../../shared/houses.css?v=dev">
 <style>
 /* Pictorial stage: blocks for each place, drawn with CSS (unit cube, ten rod, hundred flat, thousand cube) */
 .blocks{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;align-content:flex-start;padding:4px;min-height:24px}
@@ -54,10 +54,10 @@
   <p class="credit" id="credit"></p>
 </div>
 
-<script src="../../shared/core.js"></script>
-<script src="../../shared/audio.js"></script>
-<script src="../../shared/numbers.js"></script>
-<script src="pv.js"></script>
+<script src="../../shared/core.js?v=dev"></script>
+<script src="../../shared/audio.js?v=dev"></script>
+<script src="../../shared/numbers.js?v=dev"></script>
+<script src="pv.js?v=dev"></script>
 <script>
 let lang = pickLang(), S = STR[lang];
 let level = +store.get('pv-level', 1) || 1, mode = 'learn';
